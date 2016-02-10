@@ -14,10 +14,13 @@ import java.rmi.RemoteException;
  */
 public interface ChatInterface extends Remote {
     
-    // Method to connect/disconnect the client
-    public String register(String pseudo, String host) throws RemoteException;
-    public void unregister(String pseudo, String host) throws RemoteException;
+    // Method to get the user id needed for the chat to work
+    public String getUserId() throws RemoteException;
+    
+    // Method to connect/disconnect the user
+    public boolean register(String id, String pseudo, String host) throws RemoteException;
+    public void unregister(String id, String pseudo, String host) throws RemoteException;
     
     // Method to send a message to the server
-    public void sendMessage(String id, String message) throws RemoteException;
+    public void sendMessage(String pseudo, String message) throws RemoteException;
 }
