@@ -5,12 +5,9 @@
  */
 package server;
 
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -19,14 +16,25 @@ import java.util.logging.Logger;
 public class ChatServer {
     
     public static void main(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage: java server.ChatServer <port> [password]");
+            return;
+        }
+        
+        Chat c;
+        if (args.length != 1) {
+            c = new Chat(args[2]);
+        } else {
+            c = new Chat();
+        }
+        
         try {
-            Chat c = new Chat();
             ChatInterface c_stub = (ChatInterface) UnicastRemoteObject.exportObject(c, 0);
             
             Registry reg = LocateRegistry.getRegistry(Integer.parseInt(args[0]));
             reg.bind("Chat", c_stub);
             
-            System.out.println("Server for the chat !");
+            System.out.println("Server ready for the chat !");
         } catch (Exception ex) {
             System.err.println("Error on client: " + ex.getMessage());
             ex.printStackTrace();
