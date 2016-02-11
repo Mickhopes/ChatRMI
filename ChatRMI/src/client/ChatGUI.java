@@ -43,6 +43,8 @@ public class ChatGUI extends javax.swing.JFrame {
         jMenuFile = new javax.swing.JMenu();
         jMenuItemConnect = new javax.swing.JMenuItem();
         jMenuItemDisconnect = new javax.swing.JMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        jMenuItemSave = new javax.swing.JMenuItem();
         jMenuEdit = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -111,6 +113,16 @@ public class ChatGUI extends javax.swing.JFrame {
             }
         });
         jMenuFile.add(jMenuItemDisconnect);
+        jMenuFile.add(jSeparator1);
+
+        jMenuItemSave.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItemSave.setText("Save conversation");
+        jMenuItemSave.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSaveActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemSave);
 
         jMenuBar.add(jMenuFile);
 
@@ -156,6 +168,10 @@ public class ChatGUI extends javax.swing.JFrame {
             setState(State.DISCONNECTED);
         }
     }//GEN-LAST:event_jMenuItemDisconnectActionPerformed
+
+    private void jMenuItemSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jMenuItemSaveActionPerformed
     
     /**
      * Set the state of the Chat GUI.
@@ -183,8 +199,10 @@ public class ChatGUI extends javax.swing.JFrame {
     private javax.swing.JMenu jMenuFile;
     private javax.swing.JMenuItem jMenuItemConnect;
     private javax.swing.JMenuItem jMenuItemDisconnect;
+    private javax.swing.JMenuItem jMenuItemSave;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JTextArea jTextAreaChat;
     private javax.swing.JTextField jTextFieldSend;
     // End of variables declaration//GEN-END:variables
