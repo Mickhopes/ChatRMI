@@ -5,6 +5,15 @@
  */
 package client;
 
+import java.awt.event.KeyEvent;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import javax.swing.JOptionPane;
+import server.ChatInterface;
+
 /**
  * Chat GUI.
  * 
@@ -18,11 +27,51 @@ public class ChatGUI extends javax.swing.JFrame {
     private enum State { CONNECTED, DISCONNECTED };
     
     /**
+     * Registry for the communication with the chat server.
+     */
+    private Registry registry;
+    
+    /**
+     * User.
+     * 
+     * @see User
+     */
+    private User user;
+    
+    /**
+     * boolean to check is the user is connected
+     */
+    private boolean isConnected;
+    
+    /**
      * Creates new form ChatUI.
      */
     public ChatGUI() {
         initComponents();
         setState(State.DISCONNECTED);
+        jDialogConnect.setTitle("Connection");
+        
+        registry = null;
+        user = null;
+        isConnected = false;
+        
+        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                if (isConnected) {
+                    if (JOptionPane.showConfirmDialog(windowEvent.getWindow(), 
+                            "You are still connected!\nAre you sure you want to exit?", "Connection still up", 
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                        jMenuItemDisconnectActionPerformed(null);
+                        System.exit(0);
+                    }
+                } else {
+                    System.exit(0);
+                }
+            }
+        });
     }
 
     /**
@@ -34,6 +83,14 @@ public class ChatGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jDialogConnect = new javax.swing.JDialog();
+        jTextFieldPseudo = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        jTextFieldIPServer = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        jButtonConnect = new javax.swing.JButton();
+        jPasswordFieldServer = new javax.swing.JPasswordField();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextAreaChat = new javax.swing.JTextArea();
@@ -47,8 +104,89 @@ public class ChatGUI extends javax.swing.JFrame {
         jMenuItemSave = new javax.swing.JMenuItem();
         jMenuEdit = new javax.swing.JMenu();
 
+        jDialogConnect.setResizable(false);
+
+        jTextFieldPseudo.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextFieldConnectionKeyPressed(evt);
+            }
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextFieldPseudoKeyReleased(evt);
+            }
+        });
+
+        jLabel1.setText("Pseudo");
+
+        jLabel2.setText("Server");
+
+        jTextFieldIPServer.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextFieldConnectionKeyPressed(evt);
+            }
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextFieldPseudoKeyReleased(evt);
+            }
+        });
+
+        jLabel3.setText("Password");
+
+        jButtonConnect.setText("Connect");
+        jButtonConnect.setEnabled(false);
+        jButtonConnect.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonConnectActionPerformed(evt);
+            }
+        });
+
+        jPasswordFieldServer.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextFieldConnectionKeyPressed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jDialogConnectLayout = new javax.swing.GroupLayout(jDialogConnect.getContentPane());
+        jDialogConnect.getContentPane().setLayout(jDialogConnectLayout);
+        jDialogConnectLayout.setHorizontalGroup(
+            jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogConnectLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jDialogConnectLayout.createSequentialGroup()
+                        .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextFieldPseudo)
+                            .addComponent(jTextFieldIPServer)
+                            .addComponent(jPasswordFieldServer)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jDialogConnectLayout.createSequentialGroup()
+                        .addGap(0, 221, Short.MAX_VALUE)
+                        .addComponent(jButtonConnect)))
+                .addContainerGap())
+        );
+        jDialogConnectLayout.setVerticalGroup(
+            jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jDialogConnectLayout.createSequentialGroup()
+                .addGap(21, 21, 21)
+                .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldPseudo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldIPServer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jDialogConnectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(jPasswordFieldServer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jButtonConnect)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new java.awt.Dimension(500, 600));
 
         jTextAreaChat.setEditable(false);
         jTextAreaChat.setColumns(20);
@@ -57,16 +195,18 @@ public class ChatGUI extends javax.swing.JFrame {
 
         jTextFieldSend.setEnabled(false);
         jTextFieldSend.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                jTextFieldSendKeyTyped(evt);
-            }
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextFieldSendKeyPressed(evt);
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextFieldSendKeyReleased(evt);
             }
         });
 
         jButtonSend.setText("Send");
         jButtonSend.setEnabled(false);
+        jButtonSend.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonSendActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -79,14 +219,14 @@ public class ChatGUI extends javax.swing.JFrame {
                         .addComponent(jTextFieldSend)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButtonSend))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 376, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 476, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 520, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jTextFieldSend)
@@ -145,33 +285,121 @@ public class ChatGUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextFieldSendKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldSendKeyTyped
-        if (jTextFieldSend.getText().equals("")) {
-            jButtonSend.setEnabled(false);
-        } else {
-            jButtonSend.setEnabled(true);
-        }
-    }//GEN-LAST:event_jTextFieldSendKeyTyped
-
-    private void jTextFieldSendKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldSendKeyPressed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextFieldSendKeyPressed
-
     private void jMenuItemConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemConnectActionPerformed
-        if (true) {
-            setState(State.CONNECTED);
-        }
+        jDialogConnect.pack();
+        jDialogConnect.setLocationRelativeTo(this);
+        jDialogConnect.setVisible(true);
     }//GEN-LAST:event_jMenuItemConnectActionPerformed
 
     private void jMenuItemDisconnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemDisconnectActionPerformed
-        if (true) {
-            setState(State.DISCONNECTED);
+        if (isConnected) {
+            try {
+                ChatInterface chat = (ChatInterface) registry.lookup("Chat");
+                chat.unregister(user.getId(), user.getPseudo(), "localhost");
+                
+                registry = null;
+                user = null;
+                isConnected = false;
+                
+                setState(State.DISCONNECTED);
+            } catch (RemoteException ex) {
+                // TODO: afficher erreur
+            } catch (NotBoundException ex) {
+                // TODO: affichier erreur
+            }
+        } else {
+            // TODO: afficher erreur
         }
     }//GEN-LAST:event_jMenuItemDisconnectActionPerformed
 
     private void jMenuItemSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jMenuItemSaveActionPerformed
+
+    private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonConnectActionPerformed
+        jDialogConnect.setVisible(false);
+        
+        try {
+            registry = LocateRegistry.getRegistry(jTextFieldIPServer.getText());
+            ChatInterface chat = (ChatInterface) registry.lookup("Chat");
+            
+            String id = chat.getUserId();
+            String pseudo = jTextFieldPseudo.getText();
+            String PasswordServer = jPasswordFieldServer.getText();
+            
+            user = new User(id, pseudo, jTextAreaChat);
+            UserInterface u_stub = (UserInterface) UnicastRemoteObject.exportObject(user, 0);
+            
+            Registry regLocal = LocateRegistry.getRegistry();
+            regLocal.rebind(id, u_stub);
+            
+            if (chat.register(id, pseudo, "localhost", PasswordServer)) {
+                setState(State.CONNECTED);
+                isConnected = true;
+                jTextFieldSend.requestFocus();
+            } else {
+                registry = null;
+                user = null;
+                // TODO: affichage mot de passe incorrect
+                System.out.println("pas bon pass");
+            }
+        } catch (RemoteException ex) {
+            // TODO: affichage d'un message d'erreur
+            System.err.println("Error on client: " + ex.getMessage());
+            ex.printStackTrace();
+        } catch (NotBoundException ex) {
+            // TODO: un autre message d'erreur
+            System.err.println("Error on client: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }//GEN-LAST:event_jButtonConnectActionPerformed
+
+    private void jButtonSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSendActionPerformed
+        if (isConnected) {
+            try {
+                ChatInterface chat = (ChatInterface) registry.lookup("Chat");
+                chat.sendMessage(user.getPseudo(), jTextFieldSend.getText());
+
+                jTextFieldSend.setText("");
+                jButtonSend.setEnabled(false);
+            } catch (RemoteException ex) {
+                // TODO: afficher erreur
+                System.err.println("Error on client: " + ex.getMessage());
+                ex.printStackTrace();
+            } catch (NotBoundException ex) {
+                // TODO: afficher erreur
+                System.err.println("Error on client: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        } else {
+            // TODO: afficher erreur
+            System.out.println("pas connecte");
+        }
+    }//GEN-LAST:event_jButtonSendActionPerformed
+
+    private void jTextFieldConnectionKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldConnectionKeyPressed
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER 
+                && !jTextFieldPseudo.getText().isEmpty()
+                && !jTextFieldIPServer.getText().isEmpty()) {
+            jButtonConnectActionPerformed(null);
+        }
+    }//GEN-LAST:event_jTextFieldConnectionKeyPressed
+
+    private void jTextFieldPseudoKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldPseudoKeyReleased
+        if (jTextFieldPseudo.getText().isEmpty() || jTextFieldIPServer.getText().isEmpty()) {
+            jButtonConnect.setEnabled(false);
+        } else {
+            jButtonConnect.setEnabled(true);
+        }
+    }//GEN-LAST:event_jTextFieldPseudoKeyReleased
+
+    private void jTextFieldSendKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldSendKeyReleased
+        if (jTextFieldSend.getText().isEmpty()) {
+            jButtonSend.setEnabled(false);
+        } else {
+            jButtonSend.setEnabled(true);
+        }
+    }//GEN-LAST:event_jTextFieldSendKeyReleased
     
     /**
      * Set the state of the Chat GUI.
@@ -193,7 +421,12 @@ public class ChatGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButtonConnect;
     private javax.swing.JButton jButtonSend;
+    private javax.swing.JDialog jDialogConnect;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JMenuBar jMenuBar;
     private javax.swing.JMenu jMenuEdit;
     private javax.swing.JMenu jMenuFile;
@@ -201,9 +434,12 @@ public class ChatGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItemDisconnect;
     private javax.swing.JMenuItem jMenuItemSave;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPasswordField jPasswordFieldServer;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JTextArea jTextAreaChat;
+    private javax.swing.JTextField jTextFieldIPServer;
+    private javax.swing.JTextField jTextFieldPseudo;
     private javax.swing.JTextField jTextFieldSend;
     // End of variables declaration//GEN-END:variables
 }

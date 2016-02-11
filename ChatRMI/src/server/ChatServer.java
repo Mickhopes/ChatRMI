@@ -30,7 +30,7 @@ public class ChatServer {
         
         Chat c;
         if (args.length != 1) {
-            c = new Chat(args[2]);
+            c = new Chat(args[1]);
         } else {
             c = new Chat();
         }
@@ -38,8 +38,8 @@ public class ChatServer {
         try {
             ChatInterface c_stub = (ChatInterface) UnicastRemoteObject.exportObject(c, 0);
             
-            Registry reg = LocateRegistry.getRegistry(Integer.parseInt(args[0]));
-            reg.bind("Chat", c_stub);
+            Registry reg = LocateRegistry.getRegistry(/*Integer.parseInt(args[0])*/);
+            reg.rebind("Chat", c_stub);
             
             System.out.println("Server ready for the chat !");
         } catch (Exception ex) {

@@ -5,14 +5,8 @@
  */
 package client;
 
-import java.rmi.AccessException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import server.ChatInterface;
+import javax.swing.JTextArea;
 
 /**
  * Implementation of the UserInterface which the server will use
@@ -34,19 +28,25 @@ public class User implements UserInterface {
     private String id;
     
     /**
+     * JTextArea for the output
+     */
+    private JTextArea output;
+    
+    /**
      * Creates a new User.
      * 
      * @param id Id of the user.
      * @param pseudo Pseudo of the user.
      */
-    public User(String id, String pseudo) {
+    public User(String id, String pseudo, JTextArea output) {
         this.id = id;
         this.pseudo = pseudo;
+        this.output = output;
     }
 
     @Override
     public void sendMessage(String message) throws RemoteException {
-        // Get the message and show it
+        output.append(message + "\n");
     }
 
     /**
