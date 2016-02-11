@@ -4,6 +4,8 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/server/ChatServer.java</file>
+            <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/client/ChatGUI.java</file>
+            <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/client/ChatClient.java</file>
             <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/server/ChatInterface.java</file>
             <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/client/UserInterface.java</file>
             <file>file:/home/mickhopes/Documents/GitHub/ChatRMI/ChatRMI/src/client/User.java</file>
