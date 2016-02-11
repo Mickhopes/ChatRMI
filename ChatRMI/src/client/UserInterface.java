@@ -9,11 +9,18 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- *
- * @author mickhopes
+ * Interface that defines a user for the remote connection.
+ * 
+ * @author Mickaël Turnel
+ * @author Line Pouvaret
  */
 public interface UserInterface extends Remote {
     
-    // Method to send a notification to the client when a new message has been sent
+    /**
+     * Send a message to the user.
+     * 
+     * @param message Message to send.
+     * @throws RemoteException 
+     */
     public void sendMessage(String message) throws RemoteException;
 }

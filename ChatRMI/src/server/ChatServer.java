@@ -10,11 +10,18 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 /**
- *
- * @author mickhopes
+ * Main class to launch the Chat server.
+ * 
+ * @author Mickaël Turnel
+ * @author Line Pouvaret
  */
 public class ChatServer {
-    
+ 
+    /**
+     * Launch the Chat server.
+     * 
+     * @param args Arguments.
+     */
     public static void main(String[] args) {
         if (args.length < 1) {
             System.out.println("Usage: java server.ChatServer <port> [password]");

@@ -17,24 +17,62 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- *
- * @author mickhopes
+ * Implentation of ChatInterface which the client will use
+ * 
+ * @author Mickaël Turnel
+ * @author Line Pouvaret
+ * @see ChatInterface
  */
 public class Chat implements ChatInterface {
+
+    /**
+     * List of the user connected.
+     * 
+     * @see UserInterface
+     */
     private ArrayList<UserInterface> userList;
+    
+    /**
+     * List of the messages in the Chat.
+     * 
+     */
     private ArrayList<String> messageList;
+    
+    /**
+     * Id counter for the Chat.
+     */
     private int idUser;
     
+    /**
+     * Password needed to connect to the chat.
+     */
+    private String password;
+
+    /**
+     * Creates a new Chat.
+     * 
+     * @param password Password needed to connect to the Chat server.
+     */
+    public Chat(String password) {
         userList = new ArrayList<>();
         messageList = new ArrayList<>();
         idUser = 0;
+        this.password = password;
     }
     
+    /**
+     * Creates a new Chat.
+     * Sets the password to connect to the Chat server to "".
+     */
+    public Chat() {
+        this("");
+    }
+
     @Override
     public String getUserId() throws RemoteException {
         return "Client-" + (idUser++);
     }
-    
+
     @Override
     public boolean register(String id, String pseudo, String host, String password) throws RemoteException {
         try {
@@ -48,7 +86,7 @@ public class Chat implements ChatInterface {
             System.err.println("Error on server (register): " + ex.getMessage());
             ex.printStackTrace();
         }
-        
+
         return true;
     }
 
@@ -81,7 +119,16 @@ public class Chat implements ChatInterface {
             user.sendMessage(msg);
         }
     }
-    
+
+    /**
+     * Format the message send by a client.
+     * The message will have the form "[HH:mm:ss] [pseudo] : [message]".
+     * But if the message if a server message it will have the form "[HH:mm:ss] [message]".
+     * 
+     * @param pseudo The pseudo of the sender.
+     * @param message The message sent.
+     * @return The formatted message.
+     */
     private String formatMessage(String pseudo, String message) {
         String res = new SimpleDateFormat("[HH:mm:ss] ", Locale.FRANCE).format(new Date());
         
