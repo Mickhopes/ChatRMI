@@ -78,9 +78,13 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public boolean register(String id, String pseudo, String host, String password) throws RemoteException {
+    public int register(String id, String pseudo, String host, String password) throws RemoteException {
         if (!password.equals(this.password)) {
-            return false;
+            return -1;
+        }
+        
+        if (userMap.containsKey(pseudo)) {
+            return -2;
         }
         
         try {
@@ -98,7 +102,7 @@ public class Chat implements ChatInterface {
             ex.printStackTrace();
         }
 
-        return true;
+        return 0;
     }
 
     @Override

@@ -32,10 +32,10 @@ public interface ChatInterface extends Remote {
      * @param pseudo Pseudo of the user.
      * @param host IP address of the user.
      * @param password Password sent by the user.
-     * @return true if the password is correct, false otherwise.
+     * @return 0 if registration is ok, -1 if wrong password and -2 if pseudo already exists.
      * @throws RemoteException 
      */
-    public boolean register(String id, String pseudo, String host, String password) throws RemoteException;
+    public int register(String id, String pseudo, String host, String password) throws RemoteException;
     
     /**
      * Unregister to the chat server.
