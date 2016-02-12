@@ -5,14 +5,22 @@
  */
 package client;
 
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import message.Message;
 import server.ChatInterface;
 
@@ -211,6 +219,7 @@ public class ChatGUI extends javax.swing.JFrame {
             }
         });
 
+        jTextPaneChat.setEditable(false);
         jScrollPane.setViewportView(jTextPaneChat);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -307,13 +316,14 @@ public class ChatGUI extends javax.swing.JFrame {
                 isConnected = false;
                 
                 setState(State.DISCONNECTED);
+                appendChat(new Message("", "", "Disconnected...", Message.Type.APPLICATION), jTextPaneChat);
             } catch (RemoteException ex) {
-                // TODO: afficher erreur
+                appendChat(new Message("", "", "Error when disconnecting...", Message.Type.ERROR), jTextPaneChat);
             } catch (NotBoundException ex) {
-                // TODO: affichier erreur
+                appendChat(new Message("", "", "Error when disconnecting...", Message.Type.ERROR), jTextPaneChat);
             }
         } else {
-            // TODO: afficher erreur
+            appendChat(new Message("", "", "You need to be connected to a server first...", Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jMenuItemDisconnectActionPerformed
 
@@ -346,16 +356,14 @@ public class ChatGUI extends javax.swing.JFrame {
                 registry = null;
                 user = null;
                 // TODO: affichage mot de passe incorrect
-                System.out.println("pas bon pass");
+                appendChat(new Message("", "", "Wrong password for " + jTextFieldIPServer.getText() + "...", Message.Type.ERROR), jTextPaneChat);
             }
         } catch (RemoteException ex) {
             // TODO: affichage d'un message d'erreur
-            System.err.println("Error on client: " + ex.getMessage());
-            ex.printStackTrace();
+            appendChat(new Message("", "", "Error when connecting...", Message.Type.ERROR), jTextPaneChat);
         } catch (NotBoundException ex) {
             // TODO: un autre message d'erreur
-            System.err.println("Error on client: " + ex.getMessage());
-            ex.printStackTrace();
+            appendChat(new Message("", "", "Error when connecting...", Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
@@ -369,16 +377,14 @@ public class ChatGUI extends javax.swing.JFrame {
                 jButtonSend.setEnabled(false);
             } catch (RemoteException ex) {
                 // TODO: afficher erreur
-                System.err.println("Error on client: " + ex.getMessage());
-                ex.printStackTrace();
+                appendChat(new Message("", "", "Error when sending...", Message.Type.ERROR), jTextPaneChat);
             } catch (NotBoundException ex) {
                 // TODO: afficher erreur
-                System.err.println("Error on client: " + ex.getMessage());
-                ex.printStackTrace();
+                appendChat(new Message("", "", "Error when sending...", Message.Type.ERROR), jTextPaneChat);
             }
         } else {
             // TODO: afficher erreur
-            System.out.println("pas connecte");
+            appendChat(new Message("", "", "You need to be connected to a server...", Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jButtonSendActionPerformed
 
@@ -422,13 +428,72 @@ public class ChatGUI extends javax.swing.JFrame {
         switch(s) {
             case CONNECTED:
                 jTextFieldSend.setEnabled(true);
-                jTextPaneChat.setEnabled(true);
                 break;
             case DISCONNECTED:
                 jTextFieldSend.setEnabled(false);
-                jTextPaneChat.setEnabled(false);
                 jButtonSend.setEnabled(false);
                 break;
+        }
+    }
+    
+    /**
+     * Add the message to the JTextPane send in parameter.
+     * 
+     * @param message Message to show.
+     * @param output JTextPane to append.
+     */
+    public static void appendChat(Message message, JTextPane output) {
+        if (message == null || output == null) {
+            return;
+        }
+        
+        StyledDocument doc = output.getStyledDocument();
+        Style s = output.addStyle("Color", null);
+        StyleConstants.setForeground(s, Color.GREEN);
+        
+        try {
+            if (!output.getText().isEmpty()) {
+                doc.insertString(doc.getLength(), "\n", null);
+            }
+            
+            if (!message.getTime().equals("")) {
+                doc.insertString(doc.getLength(), message.getTime() + " ", s);
+            }
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        if (message.getPseudo().startsWith("Wisp")) {
+            StyleConstants.setForeground(s, Color.PINK);
+        } else {
+            StyleConstants.setForeground(s, Color.BLUE);
+        }
+        
+        try {
+            if (message.getTypeMessage() == Message.Type.MESSAGE) {
+                doc.insertString(doc.getLength(), message.getPseudo() + " : ", s);
+            }
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        switch(message.getTypeMessage()) {
+            case MESSAGE:
+            case APPLICATION:
+                StyleConstants.setForeground(s, Color.BLACK);
+                break;
+            case SYSTEM:
+                StyleConstants.setForeground(s, Color.ORANGE);
+                break;
+            case ERROR:
+                StyleConstants.setForeground(s, Color.RED);
+                break;
+        }
+        
+        try {
+            doc.insertString(doc.getLength(), message.getMessage(), s);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

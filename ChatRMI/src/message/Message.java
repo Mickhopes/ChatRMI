@@ -15,9 +15,14 @@ import java.io.Serializable;
 public class Message implements Serializable {
     
     /**
+     * Enumaration to define the type of a message
+     */
+    public enum Type { MESSAGE, SYSTEM, ERROR, APPLICATION }
+    
+    /**
      * Boolean that tells if the message is a system message.
      */
-    private boolean systemMessage;
+    private Type typeMessage;
     
     /**
      * String that contains the time that the message has been sent.
@@ -42,11 +47,11 @@ public class Message implements Serializable {
      * @param message The message.
      * @param systemMessage true if the message is a system message.
      */
-    public Message(String time, String pseudo, String message, boolean systemMessage) {
+    public Message(String time, String pseudo, String message, Type typeMessage) {
         this.time = time;
         this.pseudo = pseudo;
         this.message = message;
-        this.systemMessage = systemMessage;
+        this.typeMessage = typeMessage;
     }
     
     /**
@@ -57,25 +62,25 @@ public class Message implements Serializable {
      * @param message The message.
      */
     public Message(String time, String pseudo, String message) {
-        this(time, pseudo, message, false);
+        this(time, pseudo, message, Type.MESSAGE);
     }
 
     /**
-     * Tells if the message is a system message.
+     * Returns the type of the message.
      * 
-     * @return true if this is a system message.
+     * @return Type of the message.
      */
-    public boolean isSystemMessage() {
-        return systemMessage;
+    public Type getTypeMessage() {
+        return typeMessage;
     }
 
     /**
-     * Sets if this message is a system message.
+     * Sets the type of the message.
      * 
-     * @param systemMessage true if this is a system message.
+     * @param typeMessage Type of the message.
      */
-    public void setSystemMessage(boolean systemMessage) {
-        this.systemMessage = systemMessage;
+    public void setTypeMessage(Type typeMessage) {
+        this.typeMessage = typeMessage;
     }
 
     /**

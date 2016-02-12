@@ -89,7 +89,7 @@ public class Chat implements ChatInterface {
 
             userMap.put(pseudo, user);
             
-            Message m = new Message("", "", pseudo + " has come online", true);
+            Message m = new Message("", "", pseudo + " has come online", Message.Type.SYSTEM);
             formatTime(m);
 
             sendMessage(m);
@@ -109,7 +109,7 @@ public class Chat implements ChatInterface {
 
             userMap.remove(pseudo, user);
 
-            Message m = new Message("", "", pseudo + " has gone offline", true);
+            Message m = new Message("", "", pseudo + " has gone offline", Message.Type.SYSTEM);
             formatTime(m);
 
             sendMessage(m);
@@ -123,7 +123,7 @@ public class Chat implements ChatInterface {
     public void sendMessage(Message message) throws RemoteException {
         if (message.getMessage().startsWith("/")) {
             String [] parts = message.getMessage().split(" ");
-            Message m = new Message("", "", "", true);
+            Message m = new Message("", "", "", Message.Type.SYSTEM);
             
             switch(parts[0]) {
                 case "/help":
@@ -149,7 +149,7 @@ public class Chat implements ChatInterface {
                             m.setMessage(msg);
                             m.setPseudo("Wisp from " + message.getPseudo());
                             formatTime(m);
-                            m.setSystemMessage(false);
+                            m.setTypeMessage(Message.Type.MESSAGE);
                             
                             userMap.get(parts[1]).sendMessage(m);
                             
@@ -171,7 +171,7 @@ public class Chat implements ChatInterface {
             userMap.get(message.getPseudo()).sendMessage(m);
         } else {
             // Format our message 
-            Message m = new Message("", message.getPseudo(), message.getMessage(), message.isSystemMessage());
+            Message m = new Message("", message.getPseudo(), message.getMessage(), message.getTypeMessage());
             formatTime(m);
 
             // Add it in the list and print it

@@ -58,48 +58,7 @@ public class User implements UserInterface {
 
     @Override
     public void sendMessage(Message message) throws RemoteException {        
-        StyledDocument doc = output.getStyledDocument();
-        Style s = output.addStyle("Color", null);
-        StyleConstants.setForeground(s, Color.GREEN);
-        
-        try {
-            if (!output.getText().isEmpty()) {
-                doc.insertString(doc.getLength(), "\n", null);
-            }
-            doc.insertString(doc.getLength(), message.getTime() + " ", s);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        if (message.getPseudo().startsWith("Wisp")) {
-            StyleConstants.setForeground(s, Color.PINK);
-        } else {
-            StyleConstants.setForeground(s, Color.BLUE);
-        }
-        
-        try {
-            if (!message.isSystemMessage()) {
-                doc.insertString(doc.getLength(), message.getPseudo() + " : ", s);
-            }
-        } catch (BadLocationException ex) {
-            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        if (message.isSystemMessage()) {
-            StyleConstants.setForeground(s, Color.RED);
-        } else {
-            if (message.getPseudo().startsWith("Wisp")) {
-                StyleConstants.setForeground(s, Color.PINK);
-            } else {
-                StyleConstants.setForeground(s, Color.BLACK);
-            }
-        }
-        
-        try {
-            doc.insertString(doc.getLength(), message.getMessage(), s);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        ChatGUI.appendChat(message, output);
     }
 
     /**
