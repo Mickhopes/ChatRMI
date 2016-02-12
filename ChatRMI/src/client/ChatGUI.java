@@ -316,14 +316,12 @@ public class ChatGUI extends javax.swing.JFrame {
                 isConnected = false;
                 
                 setState(State.DISCONNECTED);
-                appendChat(new Message("", "", "Disconnected...", Message.Type.APPLICATION), jTextPaneChat);
-            } catch (RemoteException ex) {
-                appendChat(new Message("", "", "Error when disconnecting...", Message.Type.ERROR), jTextPaneChat);
-            } catch (NotBoundException ex) {
-                appendChat(new Message("", "", "Error when disconnecting...", Message.Type.ERROR), jTextPaneChat);
+                appendChat(new Message("", "", "Disconnected from \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
+            } catch (RemoteException | NotBoundException ex) {
+                appendChat(new Message("", "", "Error when disconnecting...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
             }
         } else {
-            appendChat(new Message("", "", "You need to be connected to a server first...", Message.Type.ERROR), jTextPaneChat);
+            appendChat(new Message("", "", "You need to be connected to a server...", Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jMenuItemDisconnectActionPerformed
 
@@ -348,22 +346,27 @@ public class ChatGUI extends javax.swing.JFrame {
             Registry regLocal = LocateRegistry.getRegistry();
             regLocal.rebind(id, u_stub);
             
-            if (chat.register(id, pseudo, "localhost", PasswordServer)) {
-                setState(State.CONNECTED);
-                isConnected = true;
-                jTextFieldSend.requestFocus();
-            } else {
-                registry = null;
-                user = null;
-                // TODO: affichage mot de passe incorrect
-                appendChat(new Message("", "", "Wrong password for " + jTextFieldIPServer.getText() + "...", Message.Type.ERROR), jTextPaneChat);
+            switch(chat.register(id, pseudo, "localhost", PasswordServer)) {
+                case 0:
+                    setState(State.CONNECTED);
+                    isConnected = true;
+                    jTextFieldSend.requestFocus();
+                    break;
+                case -1:
+                    registry = null;
+                    user = null;
+
+                    appendChat(new Message("", "", "Wrong password for " + jTextFieldIPServer.getText() + "...", Message.Type.ERROR), jTextPaneChat);
+                    break;
+                case -2:
+                    registry = null;
+                    user = null;
+                    
+                    appendChat(new Message("", "", "Pseudo \"" + jTextFieldPseudo.getText() + "\" is already used, try again...", Message.Type.ERROR), jTextPaneChat);
+                    break;
             }
-        } catch (RemoteException ex) {
-            // TODO: affichage d'un message d'erreur
-            appendChat(new Message("", "", "Error when connecting...", Message.Type.ERROR), jTextPaneChat);
-        } catch (NotBoundException ex) {
-            // TODO: un autre message d'erreur
-            appendChat(new Message("", "", "Error when connecting...", Message.Type.ERROR), jTextPaneChat);
+        } catch (RemoteException | NotBoundException ex) {
+            appendChat(new Message("", "", "Error when connecting...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
@@ -375,15 +378,10 @@ public class ChatGUI extends javax.swing.JFrame {
 
                 jTextFieldSend.setText("");
                 jButtonSend.setEnabled(false);
-            } catch (RemoteException ex) {
-                // TODO: afficher erreur
-                appendChat(new Message("", "", "Error when sending...", Message.Type.ERROR), jTextPaneChat);
-            } catch (NotBoundException ex) {
-                // TODO: afficher erreur
-                appendChat(new Message("", "", "Error when sending...", Message.Type.ERROR), jTextPaneChat);
+            } catch (RemoteException | NotBoundException ex) {
+                appendChat(new Message("", "", "Error when sending...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
             }
         } else {
-            // TODO: afficher erreur
             appendChat(new Message("", "", "You need to be connected to a server...", Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jButtonSendActionPerformed
