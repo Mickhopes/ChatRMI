@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+import message.Message;
 
 /**
  * Implentation of ChatInterface which the client will use
@@ -37,8 +38,9 @@ public class Chat implements ChatInterface {
     /**
      * List of the messages in the Chat.
      * 
+     * @see Message
      */
-    private ArrayList<String> messageList;
+    private ArrayList<Message> messageList;
     
     /**
      * Id counter for the Chat.
@@ -82,13 +84,15 @@ public class Chat implements ChatInterface {
         }
         
         try {
-            System.out.println(host);
             Registry reg = LocateRegistry.getRegistry(host);
             UserInterface user = (UserInterface) reg.lookup(id);
 
             userMap.put(pseudo, user);
+            
+            Message m = new Message("", "", pseudo + " has come online", true);
+            formatTime(m);
 
-            sendMessage("", pseudo + " has come online");
+            sendMessage(m);
         } catch (NotBoundException | AccessException ex) {
             System.err.println("Error on server (register): " + ex.getMessage());
             ex.printStackTrace();
@@ -105,7 +109,10 @@ public class Chat implements ChatInterface {
 
             userMap.remove(pseudo, user);
 
-            sendMessage("", pseudo + " has gone offline");
+            Message m = new Message("", "", pseudo + " has gone offline", true);
+            formatTime(m);
+
+            sendMessage(m);
         } catch (NotBoundException | AccessException ex) {
             System.err.println("Error on server (unregister): " + ex.getMessage());
             ex.printStackTrace();
@@ -113,78 +120,79 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public void sendMessage(String pseudo, String message) throws RemoteException {
-        if (message.startsWith("/")) {
-            String [] parts = message.split(" ");
-            String res = "";
+    public void sendMessage(Message message) throws RemoteException {
+        if (message.getMessage().startsWith("/")) {
+            String [] parts = message.getMessage().split(" ");
+            Message m = new Message("", "", "", true);
             
             switch(parts[0]) {
                 case "/help":
-                    res = "Available commands: help, who, wisp";
+                    m.setMessage("Available commands: help, who, wisp");
                     break;
                 case "/who":
-                    res = "Connected user(s): ";
+                    String res = "Connected user(s): ";
 
                     for(Entry<String, UserInterface> entry : userMap.entrySet()) {
                         res += entry.getKey() + ", ";
                     }
                     res = res.substring(0, res.length()-2);
+                    
+                    m.setMessage(res);
                     break;
                 case "/wisp":  
                     try {
+                        String msg = message.getMessage();
                         if (userMap.containsKey(parts[1])) {
-                            message = message.substring(parts[0].length()+1);
-                            message = message.substring(parts[1].length()+1);
-
-                            userMap.get(parts[1]).sendMessage(formatMessage("", "Wisp from " + pseudo + " : " + message));
-                            res = "Wisp to " + parts[1] + " : " + message;
+                            msg = msg.substring(parts[0].length()+1);
+                            msg = msg.substring(parts[1].length()+1);
+                            
+                            m.setMessage(msg);
+                            m.setPseudo("Wisp from " + message.getPseudo());
+                            formatTime(m);
+                            m.setSystemMessage(false);
+                            
+                            userMap.get(parts[1]).sendMessage(m);
+                            
+                            m.setPseudo("Wisp to " + parts[1]);
+                            m.setMessage(msg);
                         } else {
-                            res = "User " + parts[1] + " is not connected";
+                            m.setMessage("User " + parts[1] + " is not connected");
                         }
                     } catch(IndexOutOfBoundsException ex) {
-                        res = "Usage: /wisp <pseudo> <message>";
+                        m.setMessage("Usage: /wisp <pseudo> <message>");
                     }
                     break;
                 default:
-                    res = "Unknown command";
+                    m.setMessage("Unknown command");
                     break;
             }
             
-            userMap.get(pseudo).sendMessage(formatMessage("", res));
+            formatTime(m);
+            userMap.get(message.getPseudo()).sendMessage(m);
         } else {
             // Format our message 
-            String msg = formatMessage(pseudo, message);
+            Message m = new Message("", message.getPseudo(), message.getMessage(), message.isSystemMessage());
+            formatTime(m);
 
             // Add it in the list and print it
-            messageList.add(msg);
-            System.out.println(msg);
+            messageList.add(m);
+            System.out.println(m);
 
             // Send it to all the user connected
             for(Entry<String, UserInterface> entry : userMap.entrySet()) {
-                entry.getValue().sendMessage(msg);
+                entry.getValue().sendMessage(m);
             }
         }
     }
 
     /**
-     * Format the message send by a client.
-     * The message will have the form "[HH:mm:ss] [pseudo] : [message]".
-     * But if the message if a server message it will have the form "[HH:mm:ss] [message]".
+     * Format and set the time of a message.
+     * The time form "[HH:mm:ss]".
      * 
-     * @param pseudo The pseudo of the sender.
-     * @param message The message sent.
-     * @return The formatted message.
+     * @param Message The message.
      */
-    private String formatMessage(String pseudo, String message) {
-        String res = new SimpleDateFormat("[HH:mm:ss] ", Locale.FRANCE).format(new Date());
-        
-        if (!pseudo.equals("")) {
-            res += pseudo + " : ";
-        }
-        
-        res += message;
-        
-        return res;
+    private void formatTime(Message message) {
+        message.setTime(new SimpleDateFormat("[HH:mm:ss]", Locale.FRANCE).format(new Date()));
     }
 
 }

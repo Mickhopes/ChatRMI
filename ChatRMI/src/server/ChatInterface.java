@@ -7,6 +7,7 @@ package server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import message.Message;
 
 /**
  * Interface that defines a chat for the remote connection.
@@ -53,5 +54,5 @@ public interface ChatInterface extends Remote {
      * @param message Message sent.
      * @throws RemoteException 
      */
-    public void sendMessage(String pseudo, String message) throws RemoteException;
+    public void sendMessage(Message message) throws RemoteException;
 }

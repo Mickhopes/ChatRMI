@@ -7,6 +7,7 @@ package client;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import message.Message;
 
 /**
  * Interface that defines a user for the remote connection.
@@ -22,5 +23,5 @@ public interface UserInterface extends Remote {
      * @param message Message to send.
      * @throws RemoteException 
      */
-    public void sendMessage(String message) throws RemoteException;
+    public void sendMessage(Message message) throws RemoteException;
 }
