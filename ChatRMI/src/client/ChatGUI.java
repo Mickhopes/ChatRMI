@@ -7,6 +7,8 @@ package client;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -14,6 +16,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
@@ -78,11 +81,9 @@ public class ChatGUI extends javax.swing.JFrame {
                             JOptionPane.YES_NO_OPTION,
                             JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
                         jMenuItemDisconnectActionPerformed(null);
-                        System.exit(0);
                     }
-                } else {
-                    System.exit(0);
                 }
+                System.exit(0);
             }
         });
     }
@@ -115,7 +116,6 @@ public class ChatGUI extends javax.swing.JFrame {
         jMenuItemDisconnect = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItemSave = new javax.swing.JMenuItem();
-        jMenuEdit = new javax.swing.JMenu();
 
         jDialogConnect.setResizable(false);
 
@@ -280,9 +280,6 @@ public class ChatGUI extends javax.swing.JFrame {
 
         jMenuBar.add(jMenuFile);
 
-        jMenuEdit.setText("Edit");
-        jMenuBar.add(jMenuEdit);
-
         setJMenuBar(jMenuBar);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -300,9 +297,13 @@ public class ChatGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItemConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemConnectActionPerformed
-        jDialogConnect.pack();
-        jDialogConnect.setLocationRelativeTo(this);
-        jDialogConnect.setVisible(true);
+        if (!isConnected) {
+            jDialogConnect.pack();
+            jDialogConnect.setLocationRelativeTo(this);
+            jDialogConnect.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Your first need to disconnect from current server.", "You are still connected!", JOptionPane.WARNING_MESSAGE);
+        }
     }//GEN-LAST:event_jMenuItemConnectActionPerformed
 
     private void jMenuItemDisconnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemDisconnectActionPerformed
@@ -318,7 +319,7 @@ public class ChatGUI extends javax.swing.JFrame {
                 setState(State.DISCONNECTED);
                 appendChat(new Message("", "", "Disconnected from \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
             } catch (RemoteException | NotBoundException ex) {
-                appendChat(new Message("", "", "Error when disconnecting...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
+                appendChat(new Message("", "", "Error when disconnecting...\nReason : " + ex.getCause(), Message.Type.ERROR), jTextPaneChat);
             }
         } else {
             appendChat(new Message("", "", "You need to be connected to a server...", Message.Type.ERROR), jTextPaneChat);
@@ -326,7 +327,18 @@ public class ChatGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItemDisconnectActionPerformed
 
     private void jMenuItemSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSaveActionPerformed
-        // TODO add your handling code here:
+        JFileChooser jfc = new JFileChooser();
+        int ret = jfc.showSaveDialog(this);
+        if (ret == JFileChooser.APPROVE_OPTION) {
+            try {
+                FileWriter f = new FileWriter(jfc.getSelectedFile());
+                f.write(jTextPaneChat.getText());
+                f.close();
+                appendChat(new Message("", "", "File \"" + jfc.getSelectedFile().getName() + "\" saved...", Message.Type.APPLICATION), jTextPaneChat);
+            } catch (IOException ex) {
+                appendChat(new Message("", "", "Impossible to save \"" + jfc.getSelectedFile().getName() + "\"\nreason: " + ex.getCause(), Message.Type.ERROR), jTextPaneChat);
+            }
+        }
     }//GEN-LAST:event_jMenuItemSaveActionPerformed
 
     private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonConnectActionPerformed
@@ -339,6 +351,8 @@ public class ChatGUI extends javax.swing.JFrame {
             String id = chat.getUserId();
             String pseudo = jTextFieldPseudo.getText();
             String PasswordServer = jPasswordFieldServer.getText();
+            
+            appendChat(new Message("", "", "Connection to server \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
             
             user = new User(id, pseudo, jTextPaneChat);
             UserInterface u_stub = (UserInterface) UnicastRemoteObject.exportObject(user, 0);
@@ -366,7 +380,7 @@ public class ChatGUI extends javax.swing.JFrame {
                     break;
             }
         } catch (RemoteException | NotBoundException ex) {
-            appendChat(new Message("", "", "Error when connecting...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
+            appendChat(new Message("", "", "Error when connecting...\nReason : " + ex.getCause(), Message.Type.ERROR), jTextPaneChat);
         }
     }//GEN-LAST:event_jButtonConnectActionPerformed
 
@@ -379,7 +393,7 @@ public class ChatGUI extends javax.swing.JFrame {
                 jTextFieldSend.setText("");
                 jButtonSend.setEnabled(false);
             } catch (RemoteException | NotBoundException ex) {
-                appendChat(new Message("", "", "Error when sending...\nReason : " + ex.getMessage(), Message.Type.ERROR), jTextPaneChat);
+                appendChat(new Message("", "", "Error when sending...\nReason : " + ex.getCause(), Message.Type.ERROR), jTextPaneChat);
             }
         } else {
             appendChat(new Message("", "", "You need to be connected to a server...", Message.Type.ERROR), jTextPaneChat);
@@ -503,7 +517,6 @@ public class ChatGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JMenuBar jMenuBar;
-    private javax.swing.JMenu jMenuEdit;
     private javax.swing.JMenu jMenuFile;
     private javax.swing.JMenuItem jMenuItemConnect;
     private javax.swing.JMenuItem jMenuItemDisconnect;

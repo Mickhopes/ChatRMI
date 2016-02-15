@@ -50,7 +50,6 @@ public interface ChatInterface extends Remote {
     /**
      * Send a message to the chat server.
      * 
-     * @param pseudo Pseudo of the sender.
      * @param message Message sent.
      * @throws RemoteException 
      */

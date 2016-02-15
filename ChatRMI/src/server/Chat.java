@@ -6,6 +6,10 @@
 package server;
 
 import client.UserInterface;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -17,6 +21,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import message.Message;
 
 /**
@@ -62,6 +68,15 @@ public class Chat implements ChatInterface {
         messageList = new ArrayList<>();
         idUser = 0;
         this.password = password;
+        
+        try {
+            FileReader f = new FileReader("historic.txt");
+            String s = f.toString();
+            System.out.println(s);
+        } catch (FileNotFoundException ex) {
+            System.err.println("Error on server (open historic) : " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
     
     /**
@@ -166,6 +181,28 @@ public class Chat implements ChatInterface {
                         m.setMessage("Usage: /wisp <pseudo> <message>");
                     }
                     break;
+                case "/get":
+                    try {
+                        if (!messageList.isEmpty()) {
+                            formatTime(m);
+                            m.setMessage("Last " + parts[1] + " messages : ");
+                            userMap.get(message.getPseudo()).sendMessage(m);
+                            
+                            int val = Integer.parseInt(parts[1]);
+
+                            int i = messageList.size() >= val ? messageList.size()-val : 0;
+                            while (i < messageList.size()) {
+                                userMap.get(message.getPseudo()).sendMessage(messageList.get(i++));
+                            }
+
+                            m.setMessage("End of get.");
+                        } else {
+                            m.setMessage("There is no messages to get...");
+                        }
+                    } catch(IndexOutOfBoundsException | NumberFormatException ex) {
+                        m.setMessage("Usage: /get <number of messages>");
+                    }
+                    break;
                 default:
                     m.setMessage("Unknown command");
                     break;
@@ -181,6 +218,13 @@ public class Chat implements ChatInterface {
             // Add it in the list and print it
             messageList.add(m);
             System.out.println(m);
+            try {
+                FileWriter f = new FileWriter("historic.txt", true);
+                f.append(m.toString() + "\n");
+                f.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
             // Send it to all the user connected
             for(Entry<String, UserInterface> entry : userMap.entrySet()) {
