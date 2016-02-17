@@ -45,7 +45,7 @@ public class Message implements Serializable {
      * @param time The time of the message.
      * @param pseudo The pseudo of the sender.
      * @param message The message.
-     * @param systemMessage true if the message is a system message.
+     * @param typeMessage true if the message is a system message.
      */
     public Message(String time, String pseudo, String message, Type typeMessage) {
         this.time = time;

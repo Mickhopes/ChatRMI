@@ -31,11 +31,6 @@ public class User implements UserInterface {
     private String pseudo;
     
     /**
-     * The user id.
-     */
-    private String id;
-    
-    /**
      * JTextArea for the output
      */
     private JTextPane output;
@@ -45,9 +40,9 @@ public class User implements UserInterface {
      * 
      * @param id Id of the user.
      * @param pseudo Pseudo of the user.
+     * @param output JTextPane to put received messages.
      */
-    public User(String id, String pseudo, JTextPane output) {
-        this.id = id;
+    public User(String pseudo, JTextPane output) {
         this.pseudo = pseudo;
         this.output = output;
     }
@@ -127,15 +122,6 @@ public class User implements UserInterface {
      */
     public String getPseudo() {
         return pseudo;
-    }
-
-    /**
-     * Returns the user's id.
-     * 
-     * @return Id of the user.
-     */
-    public String getId() {
-        return id;
     }
 
 }

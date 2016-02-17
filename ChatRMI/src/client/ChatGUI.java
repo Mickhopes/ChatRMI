@@ -52,9 +52,14 @@ public class ChatGUI extends javax.swing.JFrame {
     private User user;
     
     /**
-     * boolean to check is the user is connected
+     * boolean to check is the user is connected.
      */
     private boolean isConnected;
+    
+    /**
+     * Host.
+     */
+    private String host;
     
     /**
      * Creates new form ChatUI.
@@ -118,6 +123,8 @@ public class ChatGUI extends javax.swing.JFrame {
         jMenuItemDisconnect = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItemSave = new javax.swing.JMenuItem();
+        jSeparator2 = new javax.swing.JPopupMenu.Separator();
+        jMenuQuit = new javax.swing.JMenuItem();
 
         jDialogConnect.setResizable(false);
 
@@ -279,6 +286,15 @@ public class ChatGUI extends javax.swing.JFrame {
             }
         });
         jMenuFile.add(jMenuItemSave);
+        jMenuFile.add(jSeparator2);
+
+        jMenuQuit.setText("Exit");
+        jMenuQuit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuQuitActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuQuit);
 
         jMenuBar.add(jMenuFile);
 
@@ -312,11 +328,12 @@ public class ChatGUI extends javax.swing.JFrame {
         if (isConnected) {
             try {
                 ChatInterface chat = (ChatInterface) registry.lookup("Chat");
-                chat.unregister(user.getId(), user.getPseudo());
+                chat.unregister(user.getPseudo());
                 
                 registry = null;
                 user = null;
                 isConnected = false;
+                host = null;
                 
                 setState(State.DISCONNECTED);
                 appendChat(new Message("", "", "Disconnected from \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
@@ -347,22 +364,20 @@ public class ChatGUI extends javax.swing.JFrame {
         jDialogConnect.setVisible(false);
         
         try {
-            registry = LocateRegistry.getRegistry(jTextFieldIPServer.getText());
+            host = jTextFieldIPServer.getText();
+            registry = LocateRegistry.getRegistry(host);
             ChatInterface chat = (ChatInterface) registry.lookup("Chat");
             
-            String id = chat.getUserId();
             String pseudo = jTextFieldPseudo.getText();
             String PasswordServer = jPasswordFieldServer.getText();
             
             jTextPaneChat.setText("");
-            appendChat(new Message("", "", "Connection to server \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
+            appendChat(new Message("", "", "Connection to server \"" + host + "\"...", Message.Type.APPLICATION), jTextPaneChat);
             
-            user = new User(id, pseudo, jTextPaneChat);
-            UserInterface u_stub = (UserInterface) UnicastRemoteObject.exportObject(user, 0);
+            user = new User(pseudo, jTextPaneChat);
+            UserInterface ui = (UserInterface) UnicastRemoteObject.exportObject(user, 0);
             
-            registry.rebind(id, u_stub);
-            
-            switch(chat.register(id, pseudo, PasswordServer)) {
+            switch(chat.register(pseudo, PasswordServer, ui)) {
                 case 0:
                     setState(State.CONNECTED);
                     isConnected = true;
@@ -372,11 +387,14 @@ public class ChatGUI extends javax.swing.JFrame {
                     registry = null;
                     user = null;
 
-                    appendChat(new Message("", "", "Wrong password for " + jTextFieldIPServer.getText() + "...", Message.Type.ERROR), jTextPaneChat);
+                    appendChat(new Message("", "", "Wrong password for " + host + "...", Message.Type.ERROR), jTextPaneChat);
+                    
+                    host = null;
                     break;
                 case -2:
                     registry = null;
                     user = null;
+                    host = null;
                     
                     appendChat(new Message("", "", "Pseudo \"" + jTextFieldPseudo.getText() + "\" is already used, try again...", Message.Type.ERROR), jTextPaneChat);
                     break;
@@ -432,6 +450,20 @@ public class ChatGUI extends javax.swing.JFrame {
             jButtonSendActionPerformed(null);
         }
     }//GEN-LAST:event_jTextFieldSendKeyPressed
+
+    private void jMenuQuitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuQuitActionPerformed
+        if (isConnected) {
+            if (JOptionPane.showConfirmDialog(this, 
+                    "You are still connected!\nAre you sure you want to exit?", "Connection still up", 
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                jMenuItemDisconnectActionPerformed(null);
+                System.exit(0);
+            }
+        } else {
+            System.exit(0);
+        }
+    }//GEN-LAST:event_jMenuQuitActionPerformed
     
     /**
      * Set the state of the Chat GUI.
@@ -442,10 +474,12 @@ public class ChatGUI extends javax.swing.JFrame {
         switch(s) {
             case CONNECTED:
                 jTextFieldSend.setEnabled(true);
+                this.setTitle(user.getPseudo()+"@"+host);
                 break;
             case DISCONNECTED:
                 jTextFieldSend.setEnabled(false);
                 jButtonSend.setEnabled(false);
+                this.setTitle("Chat RMI");
                 break;
         }
     }
@@ -535,10 +569,12 @@ public class ChatGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItemConnect;
     private javax.swing.JMenuItem jMenuItemDisconnect;
     private javax.swing.JMenuItem jMenuItemSave;
+    private javax.swing.JMenuItem jMenuQuit;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPasswordField jPasswordFieldServer;
     private javax.swing.JScrollPane jScrollPane;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JTextField jTextFieldIPServer;
     private javax.swing.JTextField jTextFieldPseudo;
     private javax.swing.JTextField jTextFieldSend;

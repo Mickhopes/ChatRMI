@@ -14,8 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.rmi.AccessException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -72,6 +70,7 @@ public class Chat implements ChatInterface {
      * Creates a new Chat.
      * 
      * @param password Password needed to connect to the Chat server.
+     * @param port Port to set the registry.
      */
     public Chat(String password, int port) {
         userMap = new HashMap<>();
@@ -140,12 +139,7 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public String getUserId() throws RemoteException {
-        return "Client-" + (idUser++);
-    }
-
-    @Override
-    public int register(String id, String pseudo, String password) throws RemoteException {
+    public synchronized int register(String pseudo, String password, UserInterface user) throws RemoteException {
         if (!password.equals(this.password)) {
             return -1;
         }
@@ -154,11 +148,9 @@ public class Chat implements ChatInterface {
             return -2;
         }
         
-        try {
-            UserInterface user = (UserInterface) registry.lookup(id);
+        userMap.put(pseudo, user);
 
-            userMap.put(pseudo, user);
-            
+        try {
             int i = messageList.size() < 30 ? 0 : messageList.size()-30;
             while (i < messageList.size()) {
                 Message m = messageList.get(i++);
@@ -172,121 +164,45 @@ public class Chat implements ChatInterface {
             formatTime(m);
 
             sendMessage(m);
-        } catch (NotBoundException | AccessException ex) {
-            System.err.println("Error on server (register): " + ex.getMessage());
-            ex.printStackTrace();
+        } catch (Exception ex) {
+            userMap.remove(pseudo);
         }
 
         return 0;
     }
 
     @Override
-    public void unregister(String id, String pseudo) throws RemoteException {
-        try {
-            UserInterface user = (UserInterface) registry.lookup(id);
+    public synchronized void unregister(String pseudo) throws RemoteException {
+        userMap.remove(pseudo);
 
-            userMap.remove(pseudo, user);
+        Message m = new Message("", "", pseudo + " has gone offline", Message.Type.SYSTEM);
+        formatTime(m);
 
-            Message m = new Message("", "", pseudo + " has gone offline", Message.Type.SYSTEM);
-            formatTime(m);
-
-            sendMessage(m);
-        } catch (NotBoundException | AccessException ex) {
-            System.err.println("Error on server (unregister): " + ex.getMessage());
-            ex.printStackTrace();
-        }
+        sendMessage(m);
     }
 
     @Override
-    public void sendMessage(Message message) throws RemoteException {
-        if (message.getMessage().startsWith("/")) {
-            String [] parts = message.getMessage().split(" ");
-            Message m = new Message("", "", "", Message.Type.SYSTEM);
-            
-            switch(parts[0]) {
-                case "/help":
-                    m.setMessage("Available commands: help, get, who, wisp");
-                    break;
-                case "/who":
-                    String res = "Connected user(s): ";
+    public synchronized void sendMessage(Message message) throws RemoteException {
+        // Format our message 
+        Message m = new Message("", message.getPseudo(), message.getMessage(), message.getTypeMessage());
+        formatTime(m);
 
-                    for(Entry<String, UserInterface> entry : userMap.entrySet()) {
-                        res += entry.getKey() + ", ";
-                    }
-                    res = res.substring(0, res.length()-2);
-                    
-                    m.setMessage(res);
-                    break;
-                case "/wisp":  
-                    try {
-                        String msg = message.getMessage();
-                        if (userMap.containsKey(parts[1])) {
-                            msg = msg.substring(parts[0].length()+1);
-                            msg = msg.substring(parts[1].length()+1);
-                            
-                            m.setMessage(msg);
-                            m.setPseudo("Wisp from " + message.getPseudo());
-                            formatTime(m);
-                            m.setTypeMessage(Message.Type.MESSAGE);
-                            
-                            userMap.get(parts[1]).sendMessage(m);
-                            
-                            m.setPseudo("Wisp to " + parts[1]);
-                            m.setMessage(msg);
-                        } else {
-                            m.setMessage("User " + parts[1] + " is not connected");
-                        }
-                    } catch(IndexOutOfBoundsException ex) {
-                        m.setMessage("Usage: /wisp <pseudo> <message>");
-                    }
-                    break;
-                case "/get":
-                    try {
-                        if (!messageList.isEmpty()) {
-                            formatTime(m);
-                            m.setMessage("--- Last " + parts[1] + " messages : ");
-                            userMap.get(message.getPseudo()).sendMessage(m);
-                            
-                            int val = Integer.parseInt(parts[1]);
+        // Add it in the list and print it
+        messageList.add(m);
+        System.out.println(m);
 
-                            int i = messageList.size() >= val ? messageList.size()-val : 0;
-                            while (i < messageList.size()) {
-                                userMap.get(message.getPseudo()).sendMessage(messageList.get(i++));
-                            }
+        try(FileWriter f = new FileWriter("historic.txt", true);) {
+            f.append(m.toString() + "\n");
+        } catch (IOException ex) {
+            Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-                            m.setMessage("--- End of get.");
-                        } else {
-                            m.setMessage("There is no messages to get...");
-                        }
-                    } catch(IndexOutOfBoundsException | NumberFormatException ex) {
-                        m.setMessage("Usage: /get <number of messages>");
-                    }
-                    break;
-                default:
-                    m.setMessage("Unknown command");
-                    break;
-            }
-            
-            formatTime(m);
-            userMap.get(message.getPseudo()).sendMessage(m);
-        } else {
-            // Format our message 
-            Message m = new Message("", message.getPseudo(), message.getMessage(), message.getTypeMessage());
-            formatTime(m);
-
-            // Add it in the list and print it
-            messageList.add(m);
-            System.out.println(m);
-            
-            try(FileWriter f = new FileWriter("historic.txt", true);) {
-                f.append(m.toString() + "\n");
-            } catch (IOException ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            // Send it to all the user connected
-            for(Entry<String, UserInterface> entry : userMap.entrySet()) {
+        // Send it to all the user connected
+        for(Entry<String, UserInterface> entry : userMap.entrySet()) {
+            try {
                 entry.getValue().sendMessage(m);
+            } catch (Exception ex) {
+                userMap.remove(entry.getKey());
             }
         }
     }
@@ -299,6 +215,64 @@ public class Chat implements ChatInterface {
      */
     private void formatTime(Message message) {
         message.setTime(new SimpleDateFormat("[dd/MM/yy-HH:mm:ss]", Locale.FRANCE).format(new Date()));
+    }
+
+    @Override
+    public synchronized void showUser(String pseudo) throws RemoteException {
+        Message m = new Message("", pseudo, "", Message.Type.SYSTEM);
+        String res = "Connected user(s): ";
+
+        for(Entry<String, UserInterface> entry : userMap.entrySet()) {
+            res += entry.getKey() + ", ";
+        }
+        res = res.substring(0, res.length()-2);
+
+        formatTime(m);
+        m.setMessage(res);
+        
+        try {
+            userMap.get(pseudo).sendMessage(m);
+        } catch (Exception ex) {
+            userMap.remove(pseudo);
+        }
+    }
+
+    @Override
+    public synchronized void sendWhisp(String destination, Message message) throws RemoteException {
+        Message m = new Message("", message.getPseudo(), "", Message.Type.SYSTEM);
+        String parts[] = message.getMessage().split(" ");
+        
+        try {
+            String msg = message.getMessage();
+            if (userMap.containsKey(destination)) {
+                msg = msg.substring(parts[0].length()+1);
+                msg = msg.substring(parts[1].length()+1);
+
+                m.setMessage(msg);
+                m.setPseudo("Wisp from " + message.getPseudo());
+                formatTime(m);
+                m.setTypeMessage(Message.Type.MESSAGE);
+
+                try {
+                    userMap.get(parts[1]).sendMessage(m);
+                    
+                    m.setPseudo("Wisp to " + parts[1]);
+                    m.setMessage(msg);
+                } catch (Exception ex) {
+                    userMap.remove(parts[1]);
+                    m.setPseudo("");
+                    m.setMessage(parts[1] + " has been disconnected...");
+                    m.setTypeMessage(Message.Type.SYSTEM);
+                }
+            } else {
+                m.setMessage("User " + parts[1] + " is not connected");
+            }
+        } catch(IndexOutOfBoundsException ex) {
+            m.setMessage("Usage: /wisp <pseudo> <message>");
+        }
+        
+        formatTime(m);
+        userMap.get(message.getPseudo()).sendMessage(m);
     }
 
 }

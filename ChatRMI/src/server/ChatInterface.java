@@ -5,6 +5,7 @@
  */
 package server;
 
+import client.UserInterface;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import message.Message;
@@ -18,34 +19,23 @@ import message.Message;
 public interface ChatInterface extends Remote {
     
     /**
-     * Get the next user id available.
-     * 
-     * @return The id for the user.
-     * @throws RemoteException 
-     */
-    public String getUserId() throws RemoteException;
-    
-    /**
      * Register to the chat server.
      * 
-     * @param id Id of the user.
-     * @param pseudo Pseudo of the user.
-     * @param host IP address of the user.
+     * @param pseudo Pseudo of the user to register.
      * @param password Password sent by the user.
+     * @param user User to register.
      * @return 0 if registration is ok, -1 if wrong password and -2 if pseudo already exists.
      * @throws RemoteException 
      */
-    public int register(String id, String pseudo, String password) throws RemoteException;
+    public int register(String pseudo, String password, UserInterface user) throws RemoteException;
     
     /**
      * Unregister to the chat server.
      * 
-     * @param id Id of the user.
-     * @param pseudo Pseudo of the user.
-     * @param host IP address of the user.
+     * @param pseudo Pseudo of the user to unregister.
      * @throws RemoteException 
      */
-    public void unregister(String id, String pseudo) throws RemoteException;
+    public void unregister(String pseudo) throws RemoteException;
     
     /**
      * Send a message to the chat server.
@@ -54,4 +44,8 @@ public interface ChatInterface extends Remote {
      * @throws RemoteException 
      */
     public void sendMessage(Message message) throws RemoteException;
+    
+    public void showUser(String pseudo) throws RemoteException;
+    
+    public void sendWhisp(String destination, Message message) throws RemoteException;
 }
