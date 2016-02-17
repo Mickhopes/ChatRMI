@@ -6,15 +6,20 @@
 package server;
 
 import client.UserInterface;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -57,23 +62,60 @@ public class Chat implements ChatInterface {
      * Password needed to connect to the chat.
      */
     private String password;
+    
+    /**
+     * Registry for the rmi connection
+     */
+    private Registry registry;
 
     /**
      * Creates a new Chat.
      * 
      * @param password Password needed to connect to the Chat server.
      */
-    public Chat(String password) {
+    public Chat(String password, int port) {
         userMap = new HashMap<>();
         messageList = new ArrayList<>();
         idUser = 0;
         this.password = password;
         
         try {
-            FileReader f = new FileReader("historic.txt");
-            String s = f.toString();
-            System.out.println(s);
-        } catch (FileNotFoundException ex) {
+            ChatInterface c_stub = (ChatInterface) UnicastRemoteObject.exportObject(this, 0);
+            registry = LocateRegistry.getRegistry(port);
+            registry.rebind("Chat", c_stub);
+        } catch (RemoteException ex) {
+            System.err.println("Error on server (registry): " + ex.getMessage());
+            ex.printStackTrace();
+            System.exit(-1);
+        }
+        
+        try (
+            InputStream fis = new FileInputStream("historic.txt");
+            InputStreamReader isr = new InputStreamReader(fis, Charset.forName("UTF-8"));
+            BufferedReader br = new BufferedReader(isr);
+        ) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts.length > 1) {
+                    Message m = new Message(parts[0], "", "", Message.Type.MESSAGE);
+                    if (parts[2].equals(":")) {
+                        m.setPseudo(parts[1]);
+                        m.setMessage(line.substring(parts[0].length()+1).substring(parts[1].length()+3));
+                    } else {
+                        m.setMessage(line.substring(parts[0].length()+1));
+                        m.setTypeMessage(Message.Type.SYSTEM);
+                    }
+                    messageList.add(m);
+                }
+            }
+        } catch(FileNotFoundException ex) {
+            try(FileWriter f = new FileWriter("historic.txt")) {
+                System.out.println("File \"historic.txt\" created.");
+            } catch (IOException ex1) {
+                System.err.println("Unable to create file \"historic.txt\" created.");
+            }
+        } catch (IOException ex) {
             System.err.println("Error on server (open historic) : " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -81,10 +123,20 @@ public class Chat implements ChatInterface {
     
     /**
      * Creates a new Chat.
-     * Sets the password to connect to the Chat server to "".
+     * Sets the port to connect to the default port (1099).
+     * 
+     * @param password Password to connect.
+     */
+    public Chat(String password) {
+        this(password, 1099);
+    }
+    
+    /**
+     * Creates a new Chat.
+     * Sets the password to "" and the port to the default port 1099.
      */
     public Chat() {
-        this("");
+        this("", 1099);
     }
 
     @Override
@@ -93,7 +145,7 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public int register(String id, String pseudo, String host, String password) throws RemoteException {
+    public int register(String id, String pseudo, String password) throws RemoteException {
         if (!password.equals(this.password)) {
             return -1;
         }
@@ -103,10 +155,18 @@ public class Chat implements ChatInterface {
         }
         
         try {
-            Registry reg = LocateRegistry.getRegistry(host);
-            UserInterface user = (UserInterface) reg.lookup(id);
+            UserInterface user = (UserInterface) registry.lookup(id);
 
             userMap.put(pseudo, user);
+            
+            int i = messageList.size() < 30 ? 0 : messageList.size()-30;
+            while (i < messageList.size()) {
+                Message m = messageList.get(i++);
+                Message.Type t = m.getTypeMessage();
+                m.setTypeMessage(t == Message.Type.MESSAGE ? Message.Type.OLD_MESSAGE : Message.Type.OLD_SYSTEM);
+                user.sendMessage(m);
+                m.setTypeMessage(t);
+            }
             
             Message m = new Message("", "", pseudo + " has come online", Message.Type.SYSTEM);
             formatTime(m);
@@ -121,10 +181,9 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public void unregister(String id, String pseudo, String host) throws RemoteException {
+    public void unregister(String id, String pseudo) throws RemoteException {
         try {
-            Registry reg = LocateRegistry.getRegistry(host);
-            UserInterface user = (UserInterface) reg.lookup(id);
+            UserInterface user = (UserInterface) registry.lookup(id);
 
             userMap.remove(pseudo, user);
 
@@ -146,7 +205,7 @@ public class Chat implements ChatInterface {
             
             switch(parts[0]) {
                 case "/help":
-                    m.setMessage("Available commands: help, who, wisp");
+                    m.setMessage("Available commands: help, get, who, wisp");
                     break;
                 case "/who":
                     String res = "Connected user(s): ";
@@ -185,7 +244,7 @@ public class Chat implements ChatInterface {
                     try {
                         if (!messageList.isEmpty()) {
                             formatTime(m);
-                            m.setMessage("Last " + parts[1] + " messages : ");
+                            m.setMessage("--- Last " + parts[1] + " messages : ");
                             userMap.get(message.getPseudo()).sendMessage(m);
                             
                             int val = Integer.parseInt(parts[1]);
@@ -195,7 +254,7 @@ public class Chat implements ChatInterface {
                                 userMap.get(message.getPseudo()).sendMessage(messageList.get(i++));
                             }
 
-                            m.setMessage("End of get.");
+                            m.setMessage("--- End of get.");
                         } else {
                             m.setMessage("There is no messages to get...");
                         }
@@ -218,10 +277,9 @@ public class Chat implements ChatInterface {
             // Add it in the list and print it
             messageList.add(m);
             System.out.println(m);
-            try {
-                FileWriter f = new FileWriter("historic.txt", true);
+            
+            try(FileWriter f = new FileWriter("historic.txt", true);) {
                 f.append(m.toString() + "\n");
-                f.close();
             } catch (IOException ex) {
                 Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -240,7 +298,7 @@ public class Chat implements ChatInterface {
      * @param Message The message.
      */
     private void formatTime(Message message) {
-        message.setTime(new SimpleDateFormat("[HH:mm:ss]", Locale.FRANCE).format(new Date()));
+        message.setTime(new SimpleDateFormat("[dd/MM/yy-HH:mm:ss]", Locale.FRANCE).format(new Date()));
     }
 
 }

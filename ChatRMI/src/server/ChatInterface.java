@@ -35,7 +35,7 @@ public interface ChatInterface extends Remote {
      * @return 0 if registration is ok, -1 if wrong password and -2 if pseudo already exists.
      * @throws RemoteException 
      */
-    public int register(String id, String pseudo, String host, String password) throws RemoteException;
+    public int register(String id, String pseudo, String password) throws RemoteException;
     
     /**
      * Unregister to the chat server.
@@ -45,7 +45,7 @@ public interface ChatInterface extends Remote {
      * @param host IP address of the user.
      * @throws RemoteException 
      */
-    public void unregister(String id, String pseudo, String host) throws RemoteException;
+    public void unregister(String id, String pseudo) throws RemoteException;
     
     /**
      * Send a message to the chat server.

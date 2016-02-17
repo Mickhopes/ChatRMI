@@ -81,9 +81,11 @@ public class ChatGUI extends javax.swing.JFrame {
                             JOptionPane.YES_NO_OPTION,
                             JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
                         jMenuItemDisconnectActionPerformed(null);
+                        System.exit(0);
                     }
+                } else {
+                    System.exit(0);
                 }
-                System.exit(0);
             }
         });
     }
@@ -310,7 +312,7 @@ public class ChatGUI extends javax.swing.JFrame {
         if (isConnected) {
             try {
                 ChatInterface chat = (ChatInterface) registry.lookup("Chat");
-                chat.unregister(user.getId(), user.getPseudo(), "localhost");
+                chat.unregister(user.getId(), user.getPseudo());
                 
                 registry = null;
                 user = null;
@@ -352,15 +354,15 @@ public class ChatGUI extends javax.swing.JFrame {
             String pseudo = jTextFieldPseudo.getText();
             String PasswordServer = jPasswordFieldServer.getText();
             
+            jTextPaneChat.setText("");
             appendChat(new Message("", "", "Connection to server \"" + jTextFieldIPServer.getText() + "\"...", Message.Type.APPLICATION), jTextPaneChat);
             
             user = new User(id, pseudo, jTextPaneChat);
             UserInterface u_stub = (UserInterface) UnicastRemoteObject.exportObject(user, 0);
             
-            Registry regLocal = LocateRegistry.getRegistry();
-            regLocal.rebind(id, u_stub);
+            registry.rebind(id, u_stub);
             
-            switch(chat.register(id, pseudo, "localhost", PasswordServer)) {
+            switch(chat.register(id, pseudo, PasswordServer)) {
                 case 0:
                     setState(State.CONNECTED);
                     isConnected = true;
@@ -454,14 +456,18 @@ public class ChatGUI extends javax.swing.JFrame {
      * @param message Message to show.
      * @param output JTextPane to append.
      */
-    public static void appendChat(Message message, JTextPane output) {
+    private void appendChat(Message message, JTextPane output) {
         if (message == null || output == null) {
             return;
         }
         
         StyledDocument doc = output.getStyledDocument();
         Style s = output.addStyle("Color", null);
-        StyleConstants.setForeground(s, Color.GREEN);
+        if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
+            StyleConstants.setForeground(s, Color.GRAY);
+        } else {
+            StyleConstants.setForeground(s, Color.GREEN);
+        }
         
         try {
             if (!output.getText().isEmpty()) {
@@ -475,14 +481,18 @@ public class ChatGUI extends javax.swing.JFrame {
             Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        if (message.getPseudo().startsWith("Wisp")) {
-            StyleConstants.setForeground(s, Color.PINK);
+        if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
+            StyleConstants.setForeground(s, Color.GRAY);
         } else {
-            StyleConstants.setForeground(s, Color.BLUE);
+            if (message.getPseudo().startsWith("Wisp")) {
+                StyleConstants.setForeground(s, Color.PINK);
+            } else {
+                StyleConstants.setForeground(s, Color.BLUE);
+            }
         }
         
         try {
-            if (message.getTypeMessage() == Message.Type.MESSAGE) {
+            if (message.getTypeMessage() == Message.Type.MESSAGE || message.getTypeMessage() == Message.Type.OLD_MESSAGE) {
                 doc.insertString(doc.getLength(), message.getPseudo() + " : ", s);
             }
         } catch (BadLocationException ex) {
@@ -499,6 +509,10 @@ public class ChatGUI extends javax.swing.JFrame {
                 break;
             case ERROR:
                 StyleConstants.setForeground(s, Color.RED);
+                break;
+            case OLD_MESSAGE:
+            case OLD_SYSTEM:
+                StyleConstants.setForeground(s, Color.GRAY);
                 break;
         }
         

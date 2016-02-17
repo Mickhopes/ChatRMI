@@ -9,14 +9,10 @@ import java.awt.Color;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JTextArea;
 import javax.swing.JTextPane;
-import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import message.Message;
 
@@ -58,7 +54,70 @@ public class User implements UserInterface {
 
     @Override
     public void sendMessage(Message message) throws RemoteException {        
-        ChatGUI.appendChat(message, output);
+        if (message == null || output == null) {
+            return;
+        }
+        
+        StyledDocument doc = output.getStyledDocument();
+        Style s = output.addStyle("Color", null);
+        if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
+            StyleConstants.setForeground(s, Color.GRAY);
+        } else {
+            StyleConstants.setForeground(s, Color.GREEN);
+        }
+        
+        try {
+            if (!output.getText().isEmpty()) {
+                doc.insertString(doc.getLength(), "\n", null);
+            }
+            
+            if (!message.getTime().equals("")) {
+                doc.insertString(doc.getLength(), message.getTime() + " ", s);
+            }
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
+            StyleConstants.setForeground(s, Color.GRAY);
+        } else {
+            if (message.getPseudo().startsWith("Wisp")) {
+                StyleConstants.setForeground(s, Color.PINK);
+            } else {
+                StyleConstants.setForeground(s, Color.BLUE);
+            }
+        }
+        
+        try {
+            if (message.getTypeMessage() == Message.Type.MESSAGE || message.getTypeMessage() == Message.Type.OLD_MESSAGE) {
+                doc.insertString(doc.getLength(), message.getPseudo() + " : ", s);
+            }
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        switch(message.getTypeMessage()) {
+            case MESSAGE:
+            case APPLICATION:
+                StyleConstants.setForeground(s, Color.BLACK);
+                break;
+            case SYSTEM:
+                StyleConstants.setForeground(s, Color.ORANGE);
+                break;
+            case ERROR:
+                StyleConstants.setForeground(s, Color.RED);
+                break;
+            case OLD_MESSAGE:
+            case OLD_SYSTEM:
+                StyleConstants.setForeground(s, Color.GRAY);
+                break;
+        }
+        
+        try {
+            doc.insertString(doc.getLength(), message.getMessage(), s);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(User.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

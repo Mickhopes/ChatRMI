@@ -17,7 +17,7 @@ public class Message implements Serializable {
     /**
      * Enumaration to define the type of a message
      */
-    public enum Type { MESSAGE, SYSTEM, ERROR, APPLICATION }
+    public enum Type { MESSAGE, OLD_MESSAGE, SYSTEM, OLD_SYSTEM, ERROR, APPLICATION }
     
     /**
      * Boolean that tells if the message is a system message.
