@@ -76,7 +76,7 @@ public class User implements UserInterface {
         if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
             StyleConstants.setForeground(s, Color.GRAY);
         } else {
-            if (message.getPseudo().startsWith("Wisp")) {
+            if (message.getPseudo().startsWith("Whisp")) {
                 StyleConstants.setForeground(s, Color.PINK);
             } else {
                 StyleConstants.setForeground(s, Color.BLUE);

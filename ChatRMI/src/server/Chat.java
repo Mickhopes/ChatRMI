@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -201,7 +202,7 @@ public class Chat implements ChatInterface {
         for(Entry<String, UserInterface> entry : userMap.entrySet()) {
             try {
                 entry.getValue().sendMessage(m);
-            } catch (Exception ex) {
+            } catch (ConnectException ex) {
                 userMap.remove(entry.getKey());
             }
         }
@@ -218,7 +219,7 @@ public class Chat implements ChatInterface {
     }
 
     @Override
-    public synchronized void showUser(String pseudo) throws RemoteException {
+    public synchronized void showConnectedUser(String pseudo) throws RemoteException {
         Message m = new Message("", pseudo, "", Message.Type.SYSTEM);
         String res = "Connected user(s): ";
 
@@ -232,33 +233,33 @@ public class Chat implements ChatInterface {
         
         try {
             userMap.get(pseudo).sendMessage(m);
-        } catch (Exception ex) {
+        } catch (ConnectException ex) {
             userMap.remove(pseudo);
         }
     }
 
     @Override
-    public synchronized void sendWhisp(String destination, Message message) throws RemoteException {
+    public synchronized void sendWhisp(Message message) throws RemoteException {
         Message m = new Message("", message.getPseudo(), "", Message.Type.SYSTEM);
         String parts[] = message.getMessage().split(" ");
         
         try {
             String msg = message.getMessage();
-            if (userMap.containsKey(destination)) {
+            if (userMap.containsKey(parts[1])) {
                 msg = msg.substring(parts[0].length()+1);
                 msg = msg.substring(parts[1].length()+1);
 
                 m.setMessage(msg);
-                m.setPseudo("Wisp from " + message.getPseudo());
+                m.setPseudo("Whisp from " + message.getPseudo());
                 formatTime(m);
                 m.setTypeMessage(Message.Type.MESSAGE);
 
                 try {
                     userMap.get(parts[1]).sendMessage(m);
                     
-                    m.setPseudo("Wisp to " + parts[1]);
+                    m.setPseudo("Whisp to " + parts[1]);
                     m.setMessage(msg);
-                } catch (Exception ex) {
+                } catch (ConnectException ex) {
                     userMap.remove(parts[1]);
                     m.setPseudo("");
                     m.setMessage(parts[1] + " has been disconnected...");
@@ -268,11 +269,26 @@ public class Chat implements ChatInterface {
                 m.setMessage("User " + parts[1] + " is not connected");
             }
         } catch(IndexOutOfBoundsException ex) {
-            m.setMessage("Usage: /wisp <pseudo> <message>");
+            m.setMessage("Usage: /whisp <pseudo> <message>");
         }
         
         formatTime(m);
-        userMap.get(message.getPseudo()).sendMessage(m);
+        try {
+            userMap.get(message.getPseudo()).sendMessage(m);
+        } catch (ConnectException ex) {
+            userMap.remove(message.getPseudo());
+        }
+    }
+
+    @Override
+    public void showCommands(String pseudo) throws RemoteException {
+        Message m = new Message("", "", "Available commands: /help, /whisp, /who", Message.Type.SYSTEM);
+        formatTime(m);
+        try {
+            userMap.get(pseudo).sendMessage(m);
+        } catch (ConnectException ex) {
+            userMap.remove(pseudo);
+        }
     }
 
 }

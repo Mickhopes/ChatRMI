@@ -45,7 +45,9 @@ public interface ChatInterface extends Remote {
      */
     public void sendMessage(Message message) throws RemoteException;
     
-    public void showUser(String pseudo) throws RemoteException;
+    public void showConnectedUser(String pseudo) throws RemoteException;
     
-    public void sendWhisp(String destination, Message message) throws RemoteException;
+    public void sendWhisp(Message message) throws RemoteException;
+    
+    public void showCommands(String pseudo) throws RemoteException;
 }

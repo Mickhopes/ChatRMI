@@ -62,6 +62,11 @@ public class ChatGUI extends javax.swing.JFrame {
     private String host;
     
     /**
+     * Contains the last message sent.
+     */
+    private String lastMessage;
+    
+    /**
      * Creates new form ChatUI.
      */
     public ChatGUI() {
@@ -408,8 +413,24 @@ public class ChatGUI extends javax.swing.JFrame {
         if (isConnected) {
             try {
                 ChatInterface chat = (ChatInterface) registry.lookup("Chat");
-                chat.sendMessage(new Message("", user.getPseudo(), jTextFieldSend.getText()));
+                
+                String[] parts = jTextFieldSend.getText().split(" ");
+                switch(parts[0]) {
+                    case "/who":
+                        chat.showConnectedUser(user.getPseudo());
+                        break;
+                    case "/whisp":
+                        chat.sendWhisp(new Message("", user.getPseudo(), jTextFieldSend.getText()));
+                        break;
+                    case "/help":
+                        chat.showCommands(user.getPseudo());
+                        break;
+                    default:
+                        chat.sendMessage(new Message("", user.getPseudo(), jTextFieldSend.getText()));
+                        break;
+                }
 
+                lastMessage = jTextFieldSend.getText();
                 jTextFieldSend.setText("");
                 jButtonSend.setEnabled(false);
             } catch (RemoteException | NotBoundException ex) {
@@ -448,6 +469,8 @@ public class ChatGUI extends javax.swing.JFrame {
         if (evt.getKeyCode() == KeyEvent.VK_ENTER 
                 && !jTextFieldSend.getText().isEmpty()) {
             jButtonSendActionPerformed(null);
+        } else if (evt.getKeyCode() == KeyEvent.VK_UP && !lastMessage.isEmpty()) {
+            jTextFieldSend.setText(lastMessage);
         }
     }//GEN-LAST:event_jTextFieldSendKeyPressed
 
@@ -518,7 +541,7 @@ public class ChatGUI extends javax.swing.JFrame {
         if (message.getTypeMessage() == Message.Type.OLD_MESSAGE || message.getTypeMessage() == Message.Type.OLD_SYSTEM) {
             StyleConstants.setForeground(s, Color.GRAY);
         } else {
-            if (message.getPseudo().startsWith("Wisp")) {
+            if (message.getPseudo().startsWith("Whisp")) {
                 StyleConstants.setForeground(s, Color.PINK);
             } else {
                 StyleConstants.setForeground(s, Color.BLUE);
